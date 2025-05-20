@@ -32,10 +32,14 @@ function parseError(error: string) {
   const regex = /{"error":(.*)}/gm;
   const m = regex.exec(error);
   try {
-    const e = m[1];
-    const err = JSON.parse(e);
-    return err.message;
+    if (m && m[1]) { // Check if m and m[1] are not null/undefined
+      const e = m[1];
+      const err = JSON.parse(e);
+      return err.message;
+    }
+    return error; // Return original error if regex doesn't match as expected
   } catch (e) {
+    // If JSON.parse fails or any other error occurs in try, return original error
     return error;
   }
 }
@@ -81,7 +85,7 @@ async function createGifFromPngs(
   return img;
 }
 
-function updateStatus(message: string, progress = 0) {
+function updateStatus(message: string) {
   if (statusDisplay) {
     statusDisplay.textContent = message;
   }
@@ -238,8 +242,14 @@ async function run(value: string) {
 
     updateStatus('Done!');
   } catch (error) {
-    const msg = parseError(error);
-    console.error('Error generating animation:', error);
+    let errorMessage: string;
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else {
+      errorMessage = String(error);
+    }
+    const msg = parseError(errorMessage);
+    console.error('Error generating animation:', error); // It's okay to log the original error object
     updateStatus(`Error generating animation: ${msg}`);
     return false;
   } finally {
